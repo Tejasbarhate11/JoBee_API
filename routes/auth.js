@@ -22,7 +22,7 @@ router.route('/register').post(registerUser);
 router.route('/login').post(loginUser);
 
 // /api/v1/logout
-router.route('/login').get(isUserAuthenticated, logoutUser);
+router.route('/logout').get(isUserAuthenticated, logoutUser);
 
 // /api/v1/password/reset
 router.route('/password/reset').post(isUserAuthenticated, forgotPassword);

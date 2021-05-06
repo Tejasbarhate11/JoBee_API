@@ -45,6 +45,6 @@ router.route('/me/delete').delete(deleteUser);
 router.route('/admin/users').get(authorizeRoles('admin'), adminGetUsers);
 
 // /api/v1/admin/users/:id
-router.route('/admin/users/:id').get(authorizeRoles('admin'), adminRemoveUser);
+router.route('/admin/users/:id').delete(authorizeRoles('admin'), adminRemoveUser);
 
 module.exports = router;

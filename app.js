@@ -1,8 +1,32 @@
 const express = require('express');
 const app = express();
+
+//for cross origin resourse sharing
+const cors = require('cors');
+
+//rate limit
+const rateLimit = require('express-rate-limit');
+
 //Dotenv is a zero-dependency module that loads environment variables from a .env file into process.env.
 const dotenv = require('dotenv');
+
+//Body-Parser
+const bodyparser = require('body-parser');
+
+//Data Sanitization : preventing exploits using mongo operators
+const mongoSanitize = require('express-mongo-sanitize');
+
+//xss attacks
+const xssClean = require('xss-clean');  
+
+//Parameter pollution control
+// ex ?sort=jobType&sort=salary ( this gives error )
+const hpp = require('hpp');
+
+//Helmet helps you secure your express apps by setting various HTTP headers
 //Import module for uploading files
+const helmet = require('helmet');
+
 //we can also use Multer for this
 const fileUpload = require('express-fileupload');
 
@@ -26,6 +50,16 @@ process.on('uncaughtException', err => {
 //Connecting to database
 connectDatabase();
 
+//Setting body-parser
+app.use(bodyparser.urlencoded({ extended : true }));
+
+//setting the index.html serve static files 
+//now we can load the files present in the public directory
+app.use(express.static('public'))
+
+//Setting secure HTTP Headers
+app.use(helmet());
+
 //Setting up bodyparser
 app.use(express.json());
 
@@ -33,7 +67,33 @@ app.use(express.json());
 app.use(cookieParser());
 
 //setup file uploading middleware
-app.user(fileUpload());
+app.use(fileUpload());
+
+//Rate limiting
+//It will show too many requests please try again later
+const limiter = rateLimit({
+    windowMs : 30*60*1000,  //30 minutes
+    max : 100   //100 requests per 30 min
+});
+
+//Setting the mongo sanitizer
+app.use(mongoSanitize());
+
+//Preventing xss attacks
+app.use(xssClean());
+
+//preventing paramters pollution
+app.use(hpp({
+    whitelist : ['positions']
+})); 
+
+//setup limiter middleware
+app.use(limiter);
+
+
+//Setting cors accesible to other domains
+app.use(cors());
+
 
 //Importing routes
 const jobsRoutes = require('./routes/jobsRoutes');
@@ -44,7 +104,7 @@ const authRoutes = require('./routes/auth');
 //Setting routes
 app.use('/api/v1/jobs', jobsRoutes);
 app.use('/api/v1', authRoutes);
-app.user('/api/v1', userRoutes);
+app.use('/api/v1', userRoutes);
 
 // Handling errors for wrong route
 // all is used to catch any type of requests

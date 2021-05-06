@@ -119,9 +119,9 @@ exports.deleteUser = asyncErrorHandler( async (req, res, next) => {
 //Admin controller methods
 
 // Show all users registered with JoBee
-exports.adminGetUsers = asyncErrorHandle( async (req, res, next) => {
+exports.adminGetUsers = asyncErrorHandler( async (req, res, next) => {
     //Create the filters
-    const apiFilters = new APIFilters(User.find(), req.query)
+    const apiFilters = new APIFilters(User.find().select('-id'), req.query)
         .filter()
         .sort()
         .limitFields()
@@ -191,7 +191,7 @@ async function deleteUserData(user, role){
             });
 
             //splice can be used to delete a particular object from array
-            appliedJobs[i].applcantsApplied.splice(appliedJobs[i].applcantsApplied.indexOf(obj.id));
+            appliedJobs[i].applicantsApplied.splice(appliedJobs[i].applicantsApplied.indexOf(obj.id));
 
             //Save the modified Jobs
             await appliedJobs[i].save();
