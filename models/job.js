@@ -6,7 +6,7 @@ const geoCoder = require('../utils/geocoder')
 const jobSchema = new mongoose.Schema({
     title : {
         type : String,
-        required : [ true , 'Please enter a Jpb title.'],
+        required : [ true , 'Please enter a Job title.'],
         trim : true,
         maxlength : [ 100 , 'Job title cannot exceed 100 characters.']
     },
@@ -45,7 +45,7 @@ const jobSchema = new mongoose.Schema({
     },
     industry : {
         type : [String],
-        required : true,
+        required : [true, 'Please specify the industry type'],
         enum : {
             values : [
                 'Business',
@@ -60,7 +60,7 @@ const jobSchema = new mongoose.Schema({
     },
     jobType : {
         type : String,
-        required : true,
+        required : [true, 'Please specify the Job Type'],
         enum : {
             values : [
                 'Permanent',
@@ -72,7 +72,7 @@ const jobSchema = new mongoose.Schema({
     },
     minEducation : {
         type : String,
-        required : true,
+        required : [true, 'Please specify the required minimum education'],
         enum : {
             values : [
                 'Bachelors',
@@ -88,7 +88,7 @@ const jobSchema = new mongoose.Schema({
     },
     experience : {
         type : String,
-        required : true,
+        required : [true, 'Please specify the experience required'],
         enum : {
             values : [
                 'No Experience',
@@ -116,6 +116,11 @@ const jobSchema = new mongoose.Schema({
     appliedApplicants : {
         type : [Object],
         select : false
+    },
+    user : {
+        type : mongoose.Schema.ObjectId,
+        ref : 'User',
+        required : true
     }
 });
 
@@ -148,5 +153,39 @@ jobSchema.pre('save', async function(next){
     //Move on to the next part
     next();
 });
+
+
+//pre middleware to update the slug if we change the title.
+jobSchema.pre('findOneAndUpdate', function (next) {
+ 
+    //Checks if title is been updated 
+    //If yes then it updates the slug as well.
+    if (this._update.title) {
+      this._update.slug = slugify(this._update.title, { lower: true });
+    }
+   
+    next();
+});
+
+//pre middleware to change the location if the address is updated.
+jobSchema.pre('findOneAndUpdate', async function (next) {
+ 
+    //Check if we are updating the address
+    if (this._update.address) {
+      const loc = await geocoder.geocode(this._update.address);
+   
+      this._update.location = {
+        type: 'Point',
+        coordinates: [loc[0].longitude, loc[0].latitude],
+        formattedAddress: loc[0].formattedAddress,
+        city: loc[0].city,
+        state: loc[0].stateCode,
+        zipcode: loc[0].zipcode,
+        country: loc[0].countryCode
+      };
+    }
+  });
+  
+
 
 module.exports = mongoose.model('Job', jobSchema);
